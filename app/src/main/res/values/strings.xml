@@ -1,0 +1,25 @@
+<resources>
+    <string name="app_name">约起</string>
+
+    <string name="navigation_drawer_open">打开</string>
+    <string name="navigation_drawer_close">关闭</string>
+
+    <string name="action_settings">设置</string>
+    <string name="user_des">个人简介</string>
+    <string name="user_name">昵称</string>
+    <string name="register">注册</string>
+    <string name="sex">性别</string>
+    <string name="male">男</string>
+    <string name="female">女</string>
+    <string name="birth_year">出生年月</string>
+    <string name="activity_title">活动标题</string>
+    <string name="activity_time">活动时间</string>
+    <string name="activity_route">起点-终点</string>
+    <string name="activity_des">活动描述</string>
+    <string name="gatt_disconnected">蓝牙未连接</string>
+    <string name="has_new_activity">发现新的活动</string>
+    <string name="has_not_new_activity">暂时没有新的活动</string>
+    <string name="activity_start_place">起点</string>
+    <string name="activity_end_place">终点</string>
+    <string name="publish">发布</string>
+</resources>
