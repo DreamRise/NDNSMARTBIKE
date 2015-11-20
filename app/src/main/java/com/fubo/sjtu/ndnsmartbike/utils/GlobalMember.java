@@ -5,6 +5,8 @@ package com.fubo.sjtu.ndnsmartbike.utils;
  */
 public class GlobalMember {
 
+    public final static String SERVICE_UUID="0000ffe0-0000-1000-8000-00805f9b34fb";
+    public final static String CHARACTERISTIC_UUID="0000ffe1-0000-1000-8000-00805f9b34fb";
     public static final String PACKAGE_NAME="com.fubo.sjtu.ndnbike";
     public static final String PACKET_TYPE=PACKAGE_NAME+".packet_type";
     public static final String PACKET_NAME=PACKAGE_NAME+".packet_name";

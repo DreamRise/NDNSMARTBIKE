@@ -33,13 +33,14 @@ import com.fubo.sjtu.ndnsmartbike.model.ActivityInfo;
 import com.fubo.sjtu.ndnsmartbike.model.ForwardInfo;
 import com.fubo.sjtu.ndnsmartbike.model.InterestPacket;
 import com.fubo.sjtu.ndnsmartbike.service.BleService;
+import com.fubo.sjtu.ndnsmartbike.service.BluetoothService;
 import com.fubo.sjtu.ndnsmartbike.utils.GlobalMember;
+import com.fubo.sjtu.ndnsmartbike.view.BluetoothActivity;
 import com.fubo.sjtu.ndnsmartbike.view.PulishActivity;
 import com.fubo.sjtu.ndnsmartbike.view.UserLoginActivity;
 
 import org.apache.commons.lang3.StringUtils;
 
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -62,31 +63,38 @@ public class MainActivity extends AppCompatActivity implements NavigationView
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(BleService.ACTION_GATT_DISCONNECTED);
         intentFilter.addAction(BleService.ACTION_GATT_RECEIVE_DATA);
+        intentFilter.addAction(BleService.ACTION_GATT_CONNECTED);
         intentFilter.addAction(GlobalMember.ACTION_HAS_NEW_ACTIVITY);
         intentFilter.addAction(GlobalMember.ACTION_HAS_NOT_NEW_ACTIVITY);
-        myReceiver=new MyReceiver();
+        myReceiver = new MyReceiver();
         registerReceiver(myReceiver, intentFilter);
         //开启蓝牙，需要补充两个uuid
-        //BleService.BlePublicAction.bleServiceConnectWithMaxRssi(getApplicationContext(), "", "");
-        myHandler=new MyHandler();
+        /*BleService.BlePublicAction.bleServiceConnectWithMaxRssi(getApplicationContext(),
+                GlobalMember.SERVICE_UUID, GlobalMember.CHARACTERISTIC_UUID);*/
+        myHandler = new MyHandler();
         initView();
         initData();
         initEvent();
     }
 
-    class MyHandler extends Handler{
+    class MyHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
-            if (msg.what==1)
+            if (msg.what == 1)
                 myRecyclerViewAdapter.notifyDataSetChanged();
         }
     }
+
     class MyReceiver extends BroadcastReceiver {
 
         @Override
         public void onReceive(Context context, Intent intent) {
             if (intent != null) {
                 switch (intent.getAction()) {
+                    case BleService.ACTION_GATT_CONNECTED:
+                        Toast.makeText(getApplicationContext(), getResources().getString(R.string
+                                .gatt_connected), Toast.LENGTH_SHORT).show();
+                        break;
                     case BleService.ACTION_GATT_DISCONNECTED:
                         Toast.makeText(getApplicationContext(), getResources().getString(R.string
                                 .gatt_disconnected), Toast.LENGTH_SHORT).show();
@@ -208,13 +216,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView
                 //发送请求新的活动兴趣包
                 InterestPacket interestPacket = InterestPacketGenerator
                         .generateRequestNewInterestPacket();
-                try {
-                    BleService.BlePublicAction.bleSendData(getApplicationContext(),
-                            InterestPacketGenerator.generateSendInterestPacket(interestPacket)
-                                    .getBytes("UTF-8"));
-                } catch (UnsupportedEncodingException e) {
-                    e.printStackTrace();
-                }
+
+                String data = InterestPacketGenerator.generateSendInterestPacket(interestPacket);
+                /*BleService.BlePublicAction.bleSendData(getApplicationContext(), chat_v0
+                        .simple_text_pack(data.getBytes()));*/
+                BluetoothService.sendData(getApplicationContext(), data.getBytes());
+
                 ForwardInfo forwardInfo = ForwardInfoGenerator
                         .generateForwardInfoFromInterestPacket(interestPacket);
                 ForwardInfoDataHelper forwardInfoDataHelper = new ForwardInfoDataHelper
@@ -296,6 +303,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            Intent intent = new Intent();
+            intent.setClass(this, BluetoothActivity.class);
+            startActivity(intent);
             return true;
         }
 
@@ -329,7 +339,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView
 
     @Override
     protected void onDestroy() {
-        unregisterReceiver(myReceiver);
         super.onDestroy();
+        unregisterReceiver(myReceiver);
     }
 }

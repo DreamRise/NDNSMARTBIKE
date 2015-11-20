@@ -17,7 +17,7 @@ public class DataAnalyseService {
 
     public static void onGetData(byte[] data, Context context) {
         try {
-            String dataString = new String(data, "UTF-8");
+            String dataString = new String(data);
             JSONObject jsonObject = JSONObject.fromObject(dataString);
             switch (jsonObject.getString(GlobalMember.PACKET_TYPE)) {
                 //收到data包，进行data包相关操作

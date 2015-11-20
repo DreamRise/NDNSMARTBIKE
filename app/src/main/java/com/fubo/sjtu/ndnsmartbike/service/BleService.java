@@ -20,8 +20,11 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 
+import com.fubo.sjtu.ndnsmartbike.Protocol.layer_one;
+import com.fubo.sjtu.ndnsmartbike.Protocol.layer_two;
 import com.fubo.sjtu.ndnsmartbike.model.CustomBleDevice;
 import com.fubo.sjtu.ndnsmartbike.utils.GlobalMember;
+import com.fubo.sjtu.ndnsmartbike.utils.util;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -83,6 +86,7 @@ public class BleService extends Service {
 	private List<byte[]> dataSendBuffer = new ArrayList<>();
 	private static final int MAX_SEND_SIZE = 20;
 	private boolean isReadySendData = false;
+	private byte[] m_recv_buffer = new byte[0]; // 接收的不完整数据包缓存
 	private final BluetoothGattCallback mBluetoothGattCallback = new BluetoothGattCallback() {
 		@Override
 		public void onConnectionStateChange(BluetoothGatt gatt, int status,
@@ -139,8 +143,8 @@ public class BleService extends Service {
 				BluetoothGattCharacteristic characteristic) {
 			// TODO Auto-generated method stub
 			byte[] data = characteristic.getValue();
-
-			DataAnalyseService.onGetData(data,getApplicationContext());
+			on_data_recieved(data);
+			//DataAnalyseService.onGetData(data,getApplicationContext());
 
 			//sendBroadCastWithBleData(ACTION_GATT_RECEIVE_DATA, data);
 			super.onCharacteristicChanged(gatt, characteristic);
@@ -158,6 +162,73 @@ public class BleService extends Service {
 			super.onCharacteristicWrite(gatt, characteristic, status);
 		}
 	};
+
+	// 丢弃当前接收缓存
+	private void discard_recv_buffer_data() {
+		this.m_recv_buffer = new byte[0];
+		return;
+	}
+
+	// 数据加入接收缓存
+	private void add_to_recv_buffer(byte[] data) {
+		byte[] result = util.byte_array_append(m_recv_buffer, data);
+		this.m_recv_buffer = result;
+		return;
+	}
+
+	// 当蓝牙数据到达，拼接出一个完整的包
+	private void on_data_recieved(byte[] data) {
+		if (this.m_recv_buffer.length > 0) {
+			// 有缓存时先拼接
+			data = util.byte_array_append(m_recv_buffer, data);
+		}
+
+		int[] payload = new int[1];
+		int rtn = layer_one.read_payload_len(data, payload);
+		if (layer_one.TO_BE_CONTINUED == rtn) {
+			// 包未收完
+			this.add_to_recv_buffer(data);
+			return;
+		} else if (layer_one.OK != rtn) {
+			// 出错，丢弃
+			this.discard_recv_buffer_data();
+			return;
+		}
+
+		int payload_len = payload[0];
+		int packet_len = payload_len + layer_one.SIZE;
+		if (packet_len > data.length) {
+			// 包未收完
+			this.m_recv_buffer = data;
+			return;
+		}
+
+		byte[] packet = Arrays.copyOfRange(data, 0, packet_len);
+		if (packet_len == data.length) {
+			this.m_recv_buffer = new byte[0];
+		} else {
+			this.m_recv_buffer = Arrays.copyOfRange(data, packet_len,
+					data.length);
+		}
+
+		this.on_packect_recieved(packet);
+		return;
+	}
+
+	// 当收到一个完整的包
+	private void on_packect_recieved(byte[] packet) {
+		layer_one one = new layer_one();
+		int rtn = one.parse(packet);
+		if (layer_one.OK != rtn) {
+			// 解析出错，以后需要分情况讨论，分别处理，这里先略过
+			return;
+		}
+
+		layer_two two = new layer_two();
+		DataAnalyseService.onGetData(two.parse(packet, layer_one.SIZE),getApplicationContext());
+		return;
+	}
+
 	private void onClearGattConnection() {
 		mBluetoothGattCharacteristic = null;
 		mBluetoothGatt = null;
@@ -359,6 +430,7 @@ public class BleService extends Service {
 			}
 			this.dataSendBuffer.add(Arrays.copyOfRange(data, index
 					* MAX_SEND_SIZE, data.length));
+			this.dataSendBuffer.add(data);
 		}
 		sendData();
 		return;

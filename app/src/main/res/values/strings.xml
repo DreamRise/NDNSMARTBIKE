@@ -22,4 +22,5 @@
     <string name="activity_start_place">起点</string>
     <string name="activity_end_place">终点</string>
     <string name="publish">发布</string>
+    <string name="gatt_connected">蓝牙连接成功</string>
 </resources>
