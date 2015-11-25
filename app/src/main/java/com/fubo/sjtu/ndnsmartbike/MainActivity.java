@@ -32,7 +32,6 @@ import com.fubo.sjtu.ndnsmartbike.database.ForwardInfoDataHelper;
 import com.fubo.sjtu.ndnsmartbike.model.ActivityInfo;
 import com.fubo.sjtu.ndnsmartbike.model.ForwardInfo;
 import com.fubo.sjtu.ndnsmartbike.model.InterestPacket;
-import com.fubo.sjtu.ndnsmartbike.service.BleService;
 import com.fubo.sjtu.ndnsmartbike.service.BluetoothService;
 import com.fubo.sjtu.ndnsmartbike.utils.GlobalMember;
 import com.fubo.sjtu.ndnsmartbike.view.BluetoothActivity;
@@ -40,9 +39,10 @@ import com.fubo.sjtu.ndnsmartbike.view.ForwardInfoActivity;
 import com.fubo.sjtu.ndnsmartbike.view.PulishActivity;
 import com.fubo.sjtu.ndnsmartbike.view.UserLoginActivity;
 
-
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class MainActivity extends AppCompatActivity implements NavigationView
         .OnNavigationItemSelectedListener {
@@ -55,23 +55,22 @@ public class MainActivity extends AppCompatActivity implements NavigationView
     private MyReceiver myReceiver;
     private MyHandler myHandler;
 
+    private static final int MESSAGE_UPDATE_RECYCLERVIEW=1;
+    private static final int MESSAGE_START_REFRESHING=2;
+    private static final int MESSAGE_CANCLE_REFRESHING=3;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(BleService.ACTION_GATT_DISCONNECTED);
-        intentFilter.addAction(BleService.ACTION_GATT_RECEIVE_DATA);
-        intentFilter.addAction(BleService.ACTION_GATT_CONNECTED);
         intentFilter.addAction(GlobalMember.ACTION_HAS_NEW_ACTIVITY);
         intentFilter.addAction(GlobalMember.ACTION_HAS_NOT_NEW_ACTIVITY);
         myReceiver = new MyReceiver();
         registerReceiver(myReceiver, intentFilter);
-        //开启蓝牙，需要补充两个uuid
-        /*BleService.BlePublicAction.bleServiceConnectWithMaxRssi(getApplicationContext(),
-                GlobalMember.SERVICE_UUID, GlobalMember.CHARACTERISTIC_UUID);*/
+
         myHandler = new MyHandler();
+
         initView();
         initData();
         initEvent();
@@ -80,8 +79,24 @@ public class MainActivity extends AppCompatActivity implements NavigationView
     class MyHandler extends Handler {
         @Override
         public void handleMessage(Message msg) {
-            if (msg.what == 1)
+            if (msg.what == MESSAGE_UPDATE_RECYCLERVIEW)
                 myRecyclerViewAdapter.notifyDataSetChanged();
+            else if (msg.what==MESSAGE_START_REFRESHING) {
+                swipeRefreshLayout.setRefreshing(true);
+                Timer timer=new Timer();
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        if (swipeRefreshLayout.isRefreshing()){
+                            Message message=new Message();
+                            message.what=3;
+                            myHandler.sendMessage(message);
+                        }
+                    }
+                },10000);
+            }
+            else if (msg.what==MESSAGE_CANCLE_REFRESHING)
+                swipeRefreshLayout.setRefreshing(false);
         }
     }
 
@@ -91,14 +106,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView
         public void onReceive(Context context, Intent intent) {
             if (intent != null) {
                 switch (intent.getAction()) {
-                    case BleService.ACTION_GATT_CONNECTED:
-                        Toast.makeText(getApplicationContext(), getResources().getString(R.string
-                                .gatt_connected), Toast.LENGTH_SHORT).show();
-                        break;
-                    case BleService.ACTION_GATT_DISCONNECTED:
-                        Toast.makeText(getApplicationContext(), getResources().getString(R.string
-                                .gatt_disconnected), Toast.LENGTH_SHORT).show();
-                        break;
                     case GlobalMember.ACTION_HAS_NEW_ACTIVITY:
                         Toast.makeText(getApplicationContext(), getResources().getString(R.string
                                 .has_new_activity), Toast.LENGTH_SHORT).show();
@@ -157,6 +164,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView
                 ActivityInfoDataHelper activityInfoDataHelper = ActivityInfoDataHelper
                         .getInstance(getApplicationContext());
                 List<ActivityInfo> activityInfos1 = activityInfoDataHelper.selectAllValidActivity();
+                Message message = new Message();//更新UI的消息
                 if (activityInfos1.size() == 0) {
                     //发送请求所有数据的兴趣包，先打包一个兴趣包，发送兴趣包，生成一个转发包，存储转发包
                     InterestPacket interestPacket = InterestPacketGenerator
@@ -168,12 +176,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView
                     ForwardInfoDataHelper forwardInfoDataHelper = ForwardInfoDataHelper
                             .getInstance(getApplicationContext());
                     forwardInfoDataHelper.insertForwardInfo(forwardInfo);
+                    message.what = MESSAGE_START_REFRESHING;
                 } else {
                     activityInfos.addAll(activityInfos1);
-                    Message message = new Message();
-                    message.what = 1;
-                    myHandler.sendMessage(message);
+                    message.what = MESSAGE_UPDATE_RECYCLERVIEW;
                 }
+                myHandler.sendMessage(message);
             }
         });
     }
