@@ -21,6 +21,7 @@ public class ForwardInfoGenerator {
         forwardInfo.setInterestName(dataPacket.getName());
         forwardInfo.setFlag(ForwardInfo.FORWARD_FLAG_NORMAL);
         forwardInfo.setType(ForwardInfo.FORWARD_DATA_TYPE);
+        forwardInfo.setInterestFrom(dataPacket.getReceiverId());
         return forwardInfo;
     }
     public static ForwardInfo generateForwardInfoFromInterestPacket(InterestPacket interestPacket){
@@ -30,6 +31,7 @@ public class ForwardInfoGenerator {
         forwardInfo.setInterestName(interestPacket.getName());
         forwardInfo.setFlag(ForwardInfo.FORWARD_FLAG_NORMAL);
         forwardInfo.setType(ForwardInfo.FORWARD_INTEREST_TYPE);
+        forwardInfo.setInterestFrom(interestPacket.getPublisherId());
         return forwardInfo;
     }
 }

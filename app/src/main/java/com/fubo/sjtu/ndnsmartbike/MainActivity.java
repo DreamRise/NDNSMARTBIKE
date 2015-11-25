@@ -36,10 +36,10 @@ import com.fubo.sjtu.ndnsmartbike.service.BleService;
 import com.fubo.sjtu.ndnsmartbike.service.BluetoothService;
 import com.fubo.sjtu.ndnsmartbike.utils.GlobalMember;
 import com.fubo.sjtu.ndnsmartbike.view.BluetoothActivity;
+import com.fubo.sjtu.ndnsmartbike.view.ForwardInfoActivity;
 import com.fubo.sjtu.ndnsmartbike.view.PulishActivity;
 import com.fubo.sjtu.ndnsmartbike.view.UserLoginActivity;
 
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -103,8 +103,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView
                         Toast.makeText(getApplicationContext(), getResources().getString(R.string
                                 .has_new_activity), Toast.LENGTH_SHORT).show();
                         //重新查询数据库更新
-                        activityInfos = ActivityInfoDataHelper.getInstance(getApplicationContext
-                                ()).selectAllValidActivity();
+                        List<ActivityInfo> activityInfos1 = ActivityInfoDataHelper.getInstance
+                                (getApplicationContext()).selectAllValidActivity();
+                        activityInfos.clear();
+                        activityInfos.addAll(activityInfos1);
                         myRecyclerViewAdapter.notifyDataSetChanged();
                         swipeRefreshLayout.setRefreshing(false);
                         break;
@@ -157,21 +159,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView
                 List<ActivityInfo> activityInfos1 = activityInfoDataHelper.selectAllValidActivity();
                 if (activityInfos1.size() == 0) {
                     //发送请求所有数据的兴趣包，先打包一个兴趣包，发送兴趣包，生成一个转发包，存储转发包
-                    /*InterestPacket interestPacket = InterestPacketGenerator
+                    InterestPacket interestPacket = InterestPacketGenerator
                             .generateRequestAllInterestPacket();
-
-                    try {
-                        BleService.BlePublicAction.bleSendData(getApplicationContext(),
-                                InterestPacketGenerator.generateSendInterestPacket
-                                        (interestPacket).getBytes("UTF-8"));
-                    } catch (UnsupportedEncodingException e) {
-                        e.printStackTrace();
-                    }
+                    BluetoothService.sendData(getApplicationContext(), InterestPacketGenerator
+                            .generateSendInterestPacket(interestPacket).getBytes());
                     ForwardInfo forwardInfo = ForwardInfoGenerator
                             .generateForwardInfoFromInterestPacket(interestPacket);
-                    ForwardInfoDataHelper forwardInfoDataHelper = new ForwardInfoDataHelper
-                            (getApplicationContext());
-                    forwardInfoDataHelper.insertForwardInfo(forwardInfo);*/
+                    ForwardInfoDataHelper forwardInfoDataHelper = ForwardInfoDataHelper
+                            .getInstance(getApplicationContext());
+                    forwardInfoDataHelper.insertForwardInfo(forwardInfo);
                 } else {
                     activityInfos.addAll(activityInfos1);
                     Message message = new Message();
@@ -180,33 +176,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView
                 }
             }
         });
-        /*ActivityInfo activityInfo=new ActivityInfo();
-        activityInfo.setId("123");
-        activityInfo.setPublisherId("123");
-        activityInfo.setFlag(0);
-        activityInfo.setActivityBuildDate(new Date());
-        activityInfo.setActivityDate(new Date(new Date().getTime() + 300000));
-
-        activityInfo.setActivityDes("好地方");
-        activityInfo.setActivityStartPlace("sjtu");
-        activityInfo.setActivityEndPlace("徐家汇");
-        activityInfo.setActivityTitle("欢乐骑行");
-        activityInfo.setReserve("");
-        ActivityInfo activityInfo2=new ActivityInfo();
-        activityInfo2.setId("123");
-        activityInfo2.setPublisherId("123");
-        activityInfo2.setFlag(0);
-        activityInfo2.setActivityBuildDate(new Date());
-        activityInfo2.setActivityDate(new Date(new Date().getTime() + 300000));
-
-        activityInfo2.setActivityDes("好地方");
-        activityInfo2.setActivityStartPlace("sjtu");
-        activityInfo2.setActivityEndPlace("徐家汇");
-        activityInfo2.setActivityTitle("欢乐骑行");
-        activityInfo2.setReserve("");
-        activityInfos.add(activityInfo);
-        activityInfos.add(activityInfo2);
-        myRecyclerViewAdapter.notifyDataSetChanged();*/
     }
 
     private void initEvent() {
@@ -216,15 +185,21 @@ public class MainActivity extends AppCompatActivity implements NavigationView
                 //发送请求新的活动兴趣包
                 InterestPacket interestPacket = InterestPacketGenerator
                         .generateRequestNewInterestPacket();
-
+                ActivityInfoDataHelper activityInfoDataHelper = ActivityInfoDataHelper
+                        .getInstance(getApplicationContext());
+                //添加筛选条件
+                List<ActivityInfo> activityInfos = activityInfoDataHelper.selectAllValidActivity();
+                String meta = "";
+                for (int i = 0; i < activityInfos.size(); i++) {
+                    meta += activityInfos.get(i).getId() + "/";
+                }
+                interestPacket.setMeta(meta);
                 String data = InterestPacketGenerator.generateSendInterestPacket(interestPacket);
-                /*BleService.BlePublicAction.bleSendData(getApplicationContext(), chat_v0
-                        .simple_text_pack(data.getBytes()));*/
                 BluetoothService.sendData(getApplicationContext(), data.getBytes());
 
                 ForwardInfo forwardInfo = ForwardInfoGenerator
                         .generateForwardInfoFromInterestPacket(interestPacket);
-                ForwardInfoDataHelper forwardInfoDataHelper = new ForwardInfoDataHelper
+                ForwardInfoDataHelper forwardInfoDataHelper = ForwardInfoDataHelper.getInstance
                         (getApplicationContext());
                 forwardInfoDataHelper.insertForwardInfo(forwardInfo);
             }
@@ -244,7 +219,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView
         ((TextView) (view.findViewById(R.id.userDes))).setText(MyApplication.getUser().getUserDes
                 ());
         //设置默认头像
-        if (StringUtils.equals("", MyApplication.getUser().getUserImage())) {
+        if ("".equals(MyApplication.getUser().getUserImage())) {
 
         }
         //获取用户头像
@@ -320,6 +295,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView
 
         if (id == R.id.nav_camara) {
             // Handle the camera action
+            Intent intent = new Intent();
+            intent.setClass(MainActivity.this, ForwardInfoActivity.class);
+            startActivity(intent);
         } else if (id == R.id.nav_gallery) {
 
         } else if (id == R.id.nav_slideshow) {

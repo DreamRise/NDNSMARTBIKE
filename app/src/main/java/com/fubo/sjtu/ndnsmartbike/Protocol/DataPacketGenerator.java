@@ -1,13 +1,13 @@
 package com.fubo.sjtu.ndnsmartbike.Protocol;
 
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONException;
+import com.alibaba.fastjson.JSONObject;
 import com.fubo.sjtu.ndnsmartbike.model.DataPacket;
 import com.fubo.sjtu.ndnsmartbike.model.InterestPacket;
 import com.fubo.sjtu.ndnsmartbike.utils.GlobalMember;
 import com.fubo.sjtu.ndnsmartbike.utils.UUIDUtil;
-
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.util.Date;
 
@@ -26,7 +26,7 @@ public class DataPacketGenerator {
         dataPacket.setBuildDate(new Date());
         dataPacket.setName(interestPacket.getName());
         dataPacket.setReceiverId(interestPacket.getPublisherId());
-        dataPacket.setAction(interestPacket.getAction());
+        dataPacket.setAction(ACTION_SEND_ACTIVITY);
         dataPacket.setContent(content);
         return dataPacket;
     }
@@ -34,7 +34,7 @@ public class DataPacketGenerator {
         JSONObject jsonObject = new JSONObject();
         try {
             jsonObject.put(GlobalMember.PACKET_TYPE,DATA_TYPE);
-            jsonObject.put(GlobalMember.PACKET_NAME, dataPacket);
+            jsonObject.put(GlobalMember.PACKET_NAME, JSON.toJSONString(dataPacket));
         } catch (JSONException e) {
             e.printStackTrace();
         }

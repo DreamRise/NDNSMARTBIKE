@@ -4,6 +4,7 @@ import android.app.Application;
 import android.content.SharedPreferences;
 
 import com.fubo.sjtu.ndnsmartbike.model.UserInfo;
+import com.fubo.sjtu.ndnsmartbike.utils.UUIDUtil;
 
 
 /**
@@ -29,7 +30,7 @@ public class MyApplication extends Application {
                     .string.user_des)));
             userInfo.setUserName(sharedPreferences.getString("userName", getResources().getString
                     (R.string.user_name)));
-            userInfo.setUserId(sharedPreferences.getString("userId",""));
+            userInfo.setUserId(sharedPreferences.getString("userId",UUIDUtil.getUUID()));
             userInfo.setUserImage(sharedPreferences.getString("userImage",""));
         }
         else{
@@ -39,7 +40,7 @@ public class MyApplication extends Application {
             userInfo.setSex(0);
             userInfo.setUserDes(getResources().getString(R.string.user_des));
             userInfo.setUserName(getResources().getString(R.string.user_name));
-            userInfo.setUserId("");
+            userInfo.setUserId(UUIDUtil.getUUID());
             userInfo.setUserImage("");
         }
     }

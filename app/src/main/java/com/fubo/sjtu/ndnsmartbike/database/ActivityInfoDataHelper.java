@@ -39,7 +39,7 @@ public class ActivityInfoDataHelper {
 
     public List<ActivityInfo> selectAllValidActivity() {
         Cursor cursor = mSQLiteDatabase.query(ActivityInfoSQLiteHelper.TB_NAME, null,
-                ActivityInfo.FLAG + "=" + ActivityInfo.ACTIVITY_FLAG_NORMAL + " and " +
+                ActivityInfo.FLAG + " = " + ActivityInfo.ACTIVITY_FLAG_NORMAL + " and " +
                         ActivityInfo.ACTIVITY_DATE + "> datetime(\"now\",\"localtime\")", null,
                 null, null, ActivityInfo.ACTIVITY_DATE + " desc");
         List<ActivityInfo> activityInfos = new ArrayList<>();

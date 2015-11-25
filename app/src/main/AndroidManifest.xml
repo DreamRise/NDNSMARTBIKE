@@ -22,6 +22,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".view.ForwardInfoActivity"></activity>
         <activity android:name=".view.PulishActivity"></activity>
         <activity android:name=".view.UserLoginActivity"></activity>
         <activity android:name=".view.BluetoothActivity"></activity>

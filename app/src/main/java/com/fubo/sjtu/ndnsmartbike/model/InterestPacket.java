@@ -71,4 +71,17 @@ public class InterestPacket implements Serializable {
     public void setFlag(int flag) {
         this.flag = flag;
     }
+
+    @Override
+    public String toString() {
+        return "InterestPacket{" +
+                "id='" + id + '\'' +
+                ", name='" + name + '\'' +
+                ", meta='" + meta + '\'' +
+                ", publisherId='" + publisherId + '\'' +
+                ", action='" + action + '\'' +
+                ", buildDate=" + buildDate +
+                ", flag=" + flag +
+                '}';
+    }
 }

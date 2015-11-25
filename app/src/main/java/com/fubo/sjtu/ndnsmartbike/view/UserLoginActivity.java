@@ -13,7 +13,6 @@ import com.fubo.sjtu.ndnsmartbike.base.BaseActivity;
 import com.fubo.sjtu.ndnsmartbike.model.UserInfo;
 import com.fubo.sjtu.ndnsmartbike.utils.UUIDUtil;
 
-import org.apache.commons.lang3.StringUtils;
 
 /**
  * Created by sjtu on 2015/11/15.
@@ -56,7 +55,8 @@ public class UserLoginActivity extends BaseActivity {
     }
 
     private void initEvent() {
-        if (StringUtils.isEmpty(MyApplication.getUser().getUserId())) {
+        SharedPreferences sharedPreferences = getSharedPreferences("userInfo", MODE_PRIVATE);
+        if (sharedPreferences.getBoolean("registered", false) == false) {
             btRegister.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {

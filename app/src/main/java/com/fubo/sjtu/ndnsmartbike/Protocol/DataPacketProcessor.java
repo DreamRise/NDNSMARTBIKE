@@ -3,19 +3,18 @@ package com.fubo.sjtu.ndnsmartbike.Protocol;
 import android.content.Context;
 import android.content.Intent;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONException;
+import com.alibaba.fastjson.JSONObject;
 import com.fubo.sjtu.ndnsmartbike.MyApplication;
 import com.fubo.sjtu.ndnsmartbike.database.ActivityInfoDataHelper;
 import com.fubo.sjtu.ndnsmartbike.database.ForwardInfoDataHelper;
 import com.fubo.sjtu.ndnsmartbike.model.ActivityInfo;
 import com.fubo.sjtu.ndnsmartbike.model.DataPacket;
 import com.fubo.sjtu.ndnsmartbike.model.ForwardInfo;
-import com.fubo.sjtu.ndnsmartbike.service.BleService;
+import com.fubo.sjtu.ndnsmartbike.service.BluetoothService;
 import com.fubo.sjtu.ndnsmartbike.utils.GlobalMember;
-
-import net.sf.json.JSONArray;
-import net.sf.json.JSONObject;
-
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,8 +25,14 @@ import java.util.List;
 public class DataPacketProcessor {
 
     public static void onGetDataPacket(String data, Context context) {
-        JSONObject jsonObject = JSONObject.fromObject(data);
-        DataPacket dataPacket = (DataPacket) jsonObject.get(GlobalMember.PACKET_NAME);
+        JSONObject jsonObject = null;
+        DataPacket dataPacket = null;
+        try {
+            jsonObject = JSONObject.parseObject(data);
+            dataPacket = JSON.parseObject(jsonObject.getString(GlobalMember.PACKET_NAME), DataPacket.class);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
         switch (dataPacket.getAction()) {
             //处理和活动有关的数据
             case DataPacketGenerator.ACTION_SEND_ACTIVITY:
@@ -45,32 +50,38 @@ public class DataPacketProcessor {
     private static void processDataPacketWithActivityAction(DataPacket dataPacket, Context
             context) {
         ActivityInfoDataHelper activityInfoDataHelper = ActivityInfoDataHelper.getInstance(context);
-        ForwardInfoDataHelper forwardInfoDataHelper = new ForwardInfoDataHelper(context);
+        ForwardInfoDataHelper forwardInfoDataHelper = ForwardInfoDataHelper.getInstance(context);
         List<ForwardInfo> forwardInfos = forwardInfoDataHelper.selectForwardInfoByInterstName(dataPacket.getName());
         if (forwardInfos.size() == 0) {
-            activityInfoDataHelper.closeDatabase();
-            forwardInfoDataHelper.closeDatabase();
+            /*activityInfoDataHelper.closeDatabase();
+            forwardInfoDataHelper.closeDatabase();*/
             return;
         }
         //更新数据库数据
-        JSONArray jsonArray = JSONArray.fromObject(dataPacket.getContent());
+        JSONArray jsonArray = null;
+        List<ActivityInfo> activityInfos = new ArrayList<>();
+        try {
+            activityInfos = JSON.parseArray(dataPacket.getContent(),
+                    ActivityInfo.class);
+            //jsonArray = JSONArray.parseArray(dataPacket.getContent());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
         boolean hasNewActivity=false;
         List<ActivityInfo> newActivityInfos = new ArrayList<>();
-        if (jsonArray!=null && jsonArray.size()>0){
-            for (int i=0;i<jsonArray.size();i++) {
-                ActivityInfo activityInfo = (ActivityInfo) jsonArray.get(i);
-                if (!activityInfoDataHelper.hasSameActivity(activityInfo.getId())) {
-                    activityInfoDataHelper.insertActivity(activityInfo);
+        if (activityInfos!=null && activityInfos.size()>0){
+            for (int i=0;i<activityInfos.size();i++) {
+                if (!activityInfoDataHelper.hasSameActivity(activityInfos.get(i).getId())) {
+                    activityInfoDataHelper.insertActivity(activityInfos.get(i));
                     hasNewActivity = true;
-                    newActivityInfos.add(activityInfo);
+                    newActivityInfos.add(activityInfos.get(i));
                 }
             }
         }
         //更新数据包以及转发表
         boolean hasNewRequest=false;
         for(int i=0;i<forwardInfos.size();i++) {
-            if (!StringUtils.contains(dataPacket.getReceiverId(), forwardInfos.get(i)
-                    .getInterestFrom())) {
+            if (!dataPacket.getReceiverId().contains(forwardInfos.get(i).getInterestFrom())) {
                 dataPacket.setReceiverId(dataPacket.getReceiverId()+GlobalMember.NAME_SEPARATOR+forwardInfos.get(i).getInterestFrom());
                 hasNewRequest = true;
             }
@@ -78,7 +89,7 @@ public class DataPacketProcessor {
         }
 
         //本身要这个信息
-        if (StringUtils.contains(dataPacket.getReceiverId(), MyApplication.getUser().getUserId())) {
+        if (dataPacket.getReceiverId().contains(MyApplication.getUser().getUserId())) {
             //将是否含有新数据传递给界面，进行相应的界面刷新
             if (hasNewActivity) {
                 Intent intent = new Intent();
@@ -94,6 +105,9 @@ public class DataPacketProcessor {
         //如果有新的请求者才转发，否则不转发
         if (hasNewRequest)
             //打包数据包发送
-            BleService.BlePublicAction.bleSendData(context,DataPacketGenerator.generateSendDataPacket(dataPacket).getBytes());
+        System.out.println(DataPacketGenerator.generateSendDataPacket
+                (dataPacket).getBytes());
+            BluetoothService.sendData(context, DataPacketGenerator.generateSendDataPacket
+                    (dataPacket).getBytes());
     }
 }

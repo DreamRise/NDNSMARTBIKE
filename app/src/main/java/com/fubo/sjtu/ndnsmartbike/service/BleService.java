@@ -26,7 +26,6 @@ import com.fubo.sjtu.ndnsmartbike.model.CustomBleDevice;
 import com.fubo.sjtu.ndnsmartbike.utils.GlobalMember;
 import com.fubo.sjtu.ndnsmartbike.utils.util;
 
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -107,13 +106,12 @@ public class BleService extends Service {
 			List<BluetoothGattService> bleServices = gatt.getServices();
 			boolean isConnected = false;
 			for (BluetoothGattService service : bleServices) {
-				if (StringUtils.equalsIgnoreCase(service.getUuid().toString(),
-						serviceUUID)) {
+				if (serviceUUID.equalsIgnoreCase(service.getUuid().toString())) {
 					List<BluetoothGattCharacteristic> bleCharacteristics = service
 							.getCharacteristics();
 					for (BluetoothGattCharacteristic characteristic : bleCharacteristics) {
-						if (StringUtils.equalsIgnoreCase(characteristic
-								.getUuid().toString(), characteristicUUID)) {
+						if (characteristicUUID.equalsIgnoreCase(characteristic
+								.getUuid().toString())) {
 							// 找到指定的charateristic
 							mBluetoothGattCharacteristic = characteristic;
 							mBluetoothGatt.setCharacteristicNotification(
@@ -153,8 +151,8 @@ public class BleService extends Service {
 		public void onCharacteristicWrite(BluetoothGatt gatt,
 				BluetoothGattCharacteristic characteristic, int status) {
 			// TODO Auto-generated method stub
-			if (StringUtils.equalsIgnoreCase(mBluetoothGattCharacteristic
-					.getUuid().toString(), characteristic.getUuid().toString())
+			if (characteristic.getUuid().toString().equalsIgnoreCase(mBluetoothGattCharacteristic
+					.getUuid().toString())
 					&& BluetoothGatt.GATT_SUCCESS == status) {
 				isReadySendData = true;
 				sendData();
@@ -395,7 +393,7 @@ public class BleService extends Service {
 		String action = null;
 		if (intent != null)
 			action = intent.getAction();
-		if (!StringUtils.isEmpty(action)) {
+		if (action!=null&&!"".equals(action)) {
 			switch (action) {
 				case ACTION_CONNECT_COMMAND :
 					this.serviceUUID = intent.getStringExtra(SERVICE_UUID);
