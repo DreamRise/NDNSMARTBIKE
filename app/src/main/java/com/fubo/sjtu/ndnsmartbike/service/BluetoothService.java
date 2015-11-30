@@ -175,16 +175,19 @@ public class BluetoothService extends Service {
     }
 
     //寻找包头位置
-    private int findFirstHeader(byte[] data){
-        if (data.length<12)
+    private int findFirstHeader(byte[] data,int firstTail) {
+        List<Integer> headers = new ArrayList<>();
+        if (data.length < 12)
             return -1;
-        else{
-            for (int i=0;i<=data.length-4;i++){
-                if (data[i]==0x01&&data[i+1]==0x11&&data[i+2]==0x22&&data[i+3]==0x75)
-                    return i;
+        else {
+            for (int i = 0; i <= firstTail; i++) {
+                if (data[i] == 0x01 && data[i + 1] == 0x11 && data[i + 2] == 0x22 && data[i + 3]
+                        == 0x75)
+                    headers.add(i);
             }
         }
-        return -1;
+        if (headers.size()>0) return headers.get(headers.size()-1);
+        else return -1;
     }
     //寻找包尾的位置
     private int findFirstTail(byte[] data){
@@ -206,7 +209,7 @@ public class BluetoothService extends Service {
     private  byte[] validate(byte[] data) {
         int indexTail = findFirstTail(data);
         while (indexTail!=-1) {
-            int indexHeader = findFirstHeader(data);
+            int indexHeader = findFirstHeader(data,indexTail);
             if (indexTail > indexHeader && indexHeader != -1) {
                 int dataLength = util.bytesToInt(data, indexHeader + 4);
                 //包正确

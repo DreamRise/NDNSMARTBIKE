@@ -89,14 +89,18 @@ public class MainActivity extends AppCompatActivity implements NavigationView
                     public void run() {
                         if (swipeRefreshLayout.isRefreshing()){
                             Message message=new Message();
-                            message.what=3;
+                            message.what=MESSAGE_CANCLE_REFRESHING;
                             myHandler.sendMessage(message);
                         }
                     }
                 },10000);
             }
-            else if (msg.what==MESSAGE_CANCLE_REFRESHING)
-                swipeRefreshLayout.setRefreshing(false);
+            else if (msg.what==MESSAGE_CANCLE_REFRESHING) {
+                Intent intent = new Intent();
+                intent.setAction(GlobalMember.ACTION_HAS_NOT_NEW_ACTIVITY);
+                sendBroadcast(intent);
+//                swipeRefreshLayout.setRefreshing(false);
+            }
         }
     }
 
@@ -138,7 +142,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView
             public void onClick(View view) {
                 Intent intent = new Intent();
                 intent.setClass(MainActivity.this, PulishActivity.class);
-                startActivity(intent);
+                startActivityForResult(intent, 1);
             }
         });
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -167,7 +171,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView
                 Message message = new Message();//更新UI的消息
                 if (activityInfos1.size() == 0) {
                     //发送请求所有数据的兴趣包，先打包一个兴趣包，发送兴趣包，生成一个转发包，存储转发包
-                    InterestPacket interestPacket = InterestPacketGenerator
+                    /*InterestPacket interestPacket = InterestPacketGenerator
                             .generateRequestAllInterestPacket();
                     BluetoothService.sendData(getApplicationContext(), InterestPacketGenerator
                             .generateSendInterestPacket(interestPacket).getBytes());
@@ -176,7 +180,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView
                     ForwardInfoDataHelper forwardInfoDataHelper = ForwardInfoDataHelper
                             .getInstance(getApplicationContext());
                     forwardInfoDataHelper.insertForwardInfo(forwardInfo);
-                    message.what = MESSAGE_START_REFRESHING;
+                    message.what = MESSAGE_START_REFRESHING;*/
                 } else {
                     activityInfos.addAll(activityInfos1);
                     message.what = MESSAGE_UPDATE_RECYCLERVIEW;
@@ -190,6 +194,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
+                Message message=new Message();
+                message.what=MESSAGE_START_REFRESHING;
+                myHandler.sendMessage(message);
                 //发送请求新的活动兴趣包
                 InterestPacket interestPacket = InterestPacketGenerator
                         .generateRequestNewInterestPacket();
@@ -253,6 +260,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode == 0)
             setNavHeaderView(navigationView);
+        else if (resultCode==1){
+            ActivityInfoDataHelper activityInfoDataHelper = ActivityInfoDataHelper
+                    .getInstance(getApplicationContext());
+            List<ActivityInfo> activityInfos1 = activityInfoDataHelper.selectAllValidActivity();
+            activityInfos.clear();
+            activityInfos.addAll(activityInfos1);
+            myRecyclerViewAdapter.notifyDataSetChanged();
+        }
     }
 
     @Override

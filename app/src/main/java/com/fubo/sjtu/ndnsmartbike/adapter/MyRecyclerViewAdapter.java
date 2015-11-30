@@ -5,6 +5,7 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.fubo.sjtu.ndnsmartbike.R;
@@ -12,6 +13,7 @@ import com.fubo.sjtu.ndnsmartbike.model.ActivityInfo;
 import com.fubo.sjtu.ndnsmartbike.utils.SimpleDateFormatUtil;
 
 import java.util.List;
+import java.util.Random;
 
 /**
  * Created by sjtu on 2015/11/6.
@@ -74,6 +76,16 @@ public class MyRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.Vie
                     .getActivityStartPlace() + "-" + data.get(position).getActivityEndPlace());
             ((ItemViewHolder) holder).tv_activityinfo_des.setText(data.get(position)
                     .getActivityDes());
+            Random random = new Random();
+            int index=random.nextInt()%4;
+            if (index==0)
+                ((ItemViewHolder) holder).iv_pic.setBackground(context.getResources().getDrawable(R.drawable.city_ride));
+            else if (index==1)
+                ((ItemViewHolder) holder).iv_pic.setBackground(context.getResources().getDrawable(R.drawable.forest_ride));
+            else if (index==2)
+                ((ItemViewHolder) holder).iv_pic.setBackground(context.getResources().getDrawable(R.drawable.night_ride));
+            else if (index==3)
+                ((ItemViewHolder) holder).iv_pic.setBackground(context.getResources().getDrawable(R.drawable.wide_ride));
         }
     }
 
@@ -91,12 +103,14 @@ public class MyRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.Vie
         public TextView tv_activityinfo_time;
         public TextView tv_activityinfo_route;
         public TextView tv_activityinfo_des;
+        public ImageView iv_pic;
         public ItemViewHolder(View itemView) {
             super(itemView);
             tv_activityinfo_title=(TextView)itemView.findViewById(R.id.tv_activityinfo_title);
             tv_activityinfo_time=(TextView)itemView.findViewById(R.id.tv_activityinfo_time);
             tv_activityinfo_route=(TextView)itemView.findViewById(R.id.tv_activityinfo_route);
             tv_activityinfo_des=(TextView)itemView.findViewById(R.id.tv_activityinfo_des);
+            iv_pic = (ImageView) itemView.findViewById(R.id.iv_activity_pic);
         }
     }
 }

@@ -67,7 +67,7 @@ public class PulishActivity extends AppCompatActivity {
                                 activityDate.setDate(dayOfMonth);
                                 timePickerDialog.show();
                             }
-                        }, calendar.getTime().getYear()+1900, calendar.getTime().getMonth(), calendar.getTime().getDay());
+                        }, calendar.getTime().getYear()+1900, calendar.getTime().getMonth(), calendar.getTime().getDate());
                 datePickerDialog.show();
             }
         });
@@ -88,6 +88,8 @@ public class PulishActivity extends AppCompatActivity {
                 ActivityInfoDataHelper activityInfoDataHelper = ActivityInfoDataHelper
                         .getInstance(getApplicationContext());
                 activityInfoDataHelper.insertActivity(activityInfo);
+                setResult(1);
+                finish();
             }
         });
     }
